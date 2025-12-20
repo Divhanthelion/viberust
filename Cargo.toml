@@ -1,0 +1,37 @@
+[package]
+name = "viberust"
+version = "0.1.0"
+edition = "2021"
+description = "Local LLM inference server for Rust/Wasm vibecoding using Burn"
+
+[dependencies]
+# Burn framework with WGPU backend
+burn = { version = "0.16", features = ["wgpu", "fusion", "autodiff"] }
+
+# Web server
+axum = { version = "0.7", features = ["macros"] }
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.5", features = ["cors"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Async streaming
+tokio-stream = "0.1"
+futures = "0.3"
+async-stream = "0.3"
+
+# Tokenizer
+tokenizers = "0.20"
+
+# Utilities
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+thiserror = "1"
+anyhow = "1"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
