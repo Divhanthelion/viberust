@@ -56,7 +56,9 @@ impl Tokenizer {
     }
 
     pub fn eos_token_id(&self) -> Option<u32> {
-        self.inner.token_to_id("<eos>").or_else(|| self.inner.token_to_id("</s>"))
+        self.inner.token_to_id("<eos>")
+            .or_else(|| self.inner.token_to_id("</s>"))
+            .or_else(|| self.inner.token_to_id("<end_of_turn>"))
     }
 
     pub fn pad_token_id(&self) -> Option<u32> {

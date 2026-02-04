@@ -4,44 +4,50 @@ mod handlers;
 mod types;
 
 pub use handlers::*;
+pub use types::*;
 
 use anyhow::Result;
 use axum::{
     routing::{get, post},
     Router,
 };
-use burn::backend::wgpu::WgpuDevice;
+use burn::backend::wgpu::{Wgpu, WgpuDevice};
 use std::sync::Arc;
+use tokio::sync::Mutex;
 use tower_http::cors::{Any, CorsLayer};
 use tracing::info;
 
-use crate::config::{ModelConfig, ServerConfig};
+use crate::config::ServerConfig;
+use crate::model::GemmaModel;
 use crate::tokenizer::Tokenizer;
 
-/// Shared application state (model-free for thread safety)
-#[derive(Clone)]
+/// Backend type alias
+pub type Backend = Wgpu;
+
+/// Shared application state
 pub struct AppState {
+    pub model: Arc<Mutex<GemmaModel<Backend>>>,
     pub tokenizer: Arc<Tokenizer>,
-    pub config: ModelConfig,
+    pub config: ServerConfig,
     pub device: WgpuDevice,
 }
 
 /// Run the inference server
-pub async fn run(config: ServerConfig, device: WgpuDevice) -> Result<()> {
-    info!("🔧 Initializing model: {}", config.model.name);
-    info!("✅ Model config ready with {} layers", config.model.num_layers);
+pub async fn run(
+    config: ServerConfig,
+    model: GemmaModel<Backend>,
+    tokenizer: Tokenizer,
+    device: WgpuDevice,
+) -> Result<()> {
+    info!("✅ Model loaded with {} layers", model.config().num_hidden_layers);
 
-    // Initialize tokenizer
-    info!("📝 Initializing tokenizer...");
-    let tokenizer = Arc::new(Tokenizer::simple());
-    info!("✅ Tokenizer ready");
-
-    // Create shared state (without model for thread safety)
-    let state = AppState {
-        tokenizer,
-        config: config.model.clone(),
+    // Create shared state
+    let state = Arc::new(AppState {
+        model: Arc::new(Mutex::new(model)),
+        tokenizer: Arc::new(tokenizer),
+        config: config.clone(),
         device,
-    };
+    });
 
     // Configure CORS for IDE integration
     let cors = CorsLayer::new()
@@ -61,7 +67,7 @@ pub async fn run(config: ServerConfig, device: WgpuDevice) -> Result<()> {
     // Start server
     let addr = format!("{}:{}", config.host, config.port);
     let listener = tokio::net::TcpListener::bind(&addr).await?;
-    
+
     info!("🎯 VibeRust server listening on http://{}", addr);
     info!("📡 OpenAI-compatible API available at:");
     info!("   POST /v1/chat/completions");

@@ -6,7 +6,8 @@ description = "Local LLM inference server for Rust/Wasm vibecoding using Burn"
 
 [dependencies]
 # Burn framework with WGPU backend
-burn = { version = "0.16", features = ["wgpu", "fusion", "autodiff"] }
+burn = { version = "0.16", features = ["wgpu", "fusion"] }
+safetensors = "0.5"
 
 # Web server
 axum = { version = "0.7", features = ["macros"] }
@@ -25,11 +26,17 @@ async-stream = "0.3"
 # Tokenizer
 tokenizers = "0.20"
 
+# HuggingFace Hub for model downloads
+hf-hub = "0.4"
+
 # Utilities
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 thiserror = "1"
 anyhow = "1"
+dirs = "5"
+byteorder = "1"
+half = "2"
 
 [profile.release]
 opt-level = 3
